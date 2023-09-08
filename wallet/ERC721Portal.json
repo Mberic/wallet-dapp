@@ -1,0 +1,7 @@
+[
+  {
+    "internalType": "contract IInputBox",
+    "name": "_inputBox",
+    "type": "address"
+  }
+]
