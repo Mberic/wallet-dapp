@@ -17,23 +17,9 @@ ABI = info_json
 
 contract = w3.eth.contract(address = EtherPortal, abi = ABI) # Instantiate smart contract 
 nonce = w3.eth.get_transaction_count(HardhatWalletAddress)  
+execLayerData = "Ether deposit"
 
-transaction = { # txn to be processed by wallet DApp on execution layer (i.e Cartesi node)
-    'gas': 25000000,
-    'gasPrice': 450000, 
-    'chainId': 48750, # arbitrary chainID to mean Cartesi network
-    'from': HardhatWalletAddress, 
-    'value': 5,
-    'nonce': nonce,  
-}
-
-signed = w3.eth.account.sign_transaction(transaction, PrivateKey)
-msg = str(signed)
-
-byte_value = msg.encode() # Convert the string to a byte-like object
-txn_info = '0x' + byte_value.hex() # Convert to a hex string
-
-transaction = contract.functions.depositEther( CartesiDapp, txn_info ).build_transaction( {
+transaction = contract.functions.depositEther( CartesiDapp, execLayerData ).build_transaction( {
     'gasPrice': w3.eth.gas_price, 
     'chainId': 31337, 
     'from': HardhatWalletAddress, 
@@ -45,5 +31,4 @@ signed_txn = w3.eth.account.sign_transaction(transaction, private_key = PrivateK
 result = w3.eth.send_raw_transaction(signed_txn.rawTransaction)  
 tx_hash = result.hex()
 
-print(tx_hash)
-
+print("Transaction hash: " + tx_hash)
