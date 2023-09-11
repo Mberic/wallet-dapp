@@ -19,7 +19,10 @@ contract = w3.eth.contract(address = EtherPortal, abi = ABI) # Instantiate smart
 nonce = w3.eth.get_transaction_count(HardhatWalletAddress)  
 execLayerData = "Ether deposit"
 
-transaction = contract.functions.depositEther( CartesiDapp, execLayerData ).build_transaction( {
+byte_value = execLayerData.encode() # Convert the string to a byte-like object
+hexData = '0x' + byte_value.hex() # Convert to a hex string
+
+transaction = contract.functions.depositEther( CartesiDapp, hexData ).build_transaction( {
     'gasPrice': w3.eth.gas_price, 
     'chainId': 31337, 
     'from': HardhatWalletAddress, 
