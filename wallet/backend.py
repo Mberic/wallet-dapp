@@ -36,25 +36,16 @@ ABI = info_json
 contract = w3.eth.contract(address = EtherPortal, abi = ABI) 
 
 def handle_advance(data):
-    logger.info(f"Received advance request data")
+    logger.info(f"Received advance request data {data}")
 
     metadata = data["metadata"]
     block = w3.eth.get_block(metadata["block_number"])
     tx_hash = block.transactions[0].hex()
     tx = w3.eth.get_transaction(tx_hash)
     func_obj, func_params = contract.decode_function_input(tx["input"])
-    stringMessage = func_params["_execLayerData"].decode('utf-8')
+    print()
     print(func_params)
-
-    signedData = func_params["_execLayerData"].decode('utf-8')
-    raw_transaction = signedData[43:215] # extract raw transaction from signed data
-    acct = Account.recover_transaction(raw_transaction)
-
-    if HardhatWalletAddress ==  acct:
-        print("\nSignature succefully verified\n")
-    else:
-        print("\nInvalid signature.\n")
-
+    
     logger.info("Adding notice")
     notice = {"payload": data["payload"]}
     response = requests.post(rollup_server + "/notice", json=notice)
