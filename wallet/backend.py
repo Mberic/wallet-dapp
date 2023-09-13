@@ -13,10 +13,10 @@
 from os import environ
 import logging
 import requests
-from web3 import Web3, AsyncWeb3
+from web3 import Web3
 
-from eth_account import Account
 import json
+from eth_account import Account
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -26,31 +26,61 @@ logger.info(f"HTTP rollup_server url is {rollup_server}")
 
 HardhatWalletAddress = Web3.to_checksum_address('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266')
 EtherPortal = Web3.to_checksum_address('0xFfdbe43d4c855BF7e0f105c400A50857f53AB044') 
-hardhat_rpc_url= 'http://127.0.0.1:8545/'
-w3 = Web3(Web3.HTTPProvider(hardhat_rpc_url))
-
-with open("EtherPortal.json") as f:  # load EtherPortal ABI
-    info_json = json.load(f)
-ABI = info_json
-
-contract = w3.eth.contract(address = EtherPortal, abi = ABI) 
+ERC20Portal= Web3.to_checksum_address('0x9C21AEb2093C32DDbC53eEF24B873BDCd1aDa1DB')
+ERC721Portal= Web3.to_checksum_address('0x237F8DD094C0e47f4236f12b4Fa01d6Dae89fb87')
+ERC1155SinglePortal= Web3.to_checksum_address('0x7CFB0193Ca87eB6e48056885E026552c3A941FC4')
 
 def handle_advance(data):
-    logger.info(f"Received advance request data {data}")
+    logger.info(f"Received advance request data")
+    decode_payload(data)
 
-    metadata = data["metadata"]
-    block = w3.eth.get_block(metadata["block_number"])
-    tx_hash = block.transactions[0].hex()
-    tx = w3.eth.get_transaction(tx_hash)
-    func_obj, func_params = contract.decode_function_input(tx["input"])
-    print()
-    print(func_params)
-    
     logger.info("Adding notice")
     notice = {"payload": data["payload"]}
     response = requests.post(rollup_server + "/notice", json=notice)
     logger.info(f"Received notice status {response.status_code} body {response.content}")
     return "accept"
+
+def decode_payload(data):
+
+    metadata = data["metadata"]
+    msg_sender = metadata["msg_sender"]
+    payload = data["payload"]
+
+    if Web3.to_checksum_address(msg_sender) == EtherPortal:
+        sender = payload[2:42]
+        value = int(payload[42:106], 16)
+        execLayerData = bytes.fromhex(payload[106:]).decode()
+        print(sender, value, execLayerData)
+    elif Web3.to_checksum_address(msg_sender) == ERC20Portal:
+        success = payload[2:4]
+        token = payload[4:44]
+        sender = payload[44:84]
+        amount = int(payload[84:148], 16)
+        execLayerData = bytes.fromhex(payload[148:]).decode()
+        print(sender, amount, execLayerData)
+    elif Web3.to_checksum_address(msg_sender) == ERC721Portal:
+        token = payload[2:42]
+        sender = payload[42:82]
+        tokenId = payload[82:146]
+        data = payload[146:]
+        print(sender, tokenId, data)
+    elif Web3.to_checksum_address(msg_sender) == ERC1155SinglePortal:
+        token = payload[2:42]
+        sender = payload[42:82]
+        tokenId = payload[82:146]
+        value = payload[146:210]
+        data = payload[210:]
+        print(sender, value, data)
+    elif Web3.to_checksum_address(msg_sender) == HardhatWalletAddress:
+        signedData = bytes.fromhex(payload[2:]).decode()
+        raw_transaction = signedData[43:215] # extract raw transaction from signed data
+        acct = Account.recover_transaction(raw_transaction)
+
+        if HardhatWalletAddress ==  acct:
+            print("\nSignature succefully verified")
+            print("Transcation signed by " + acct + "\n")
+        else:
+            print("\nInvalid signature.\n")
 
 def handle_inspect(data):
     logger.info(f"Received inspect request data {data}")
