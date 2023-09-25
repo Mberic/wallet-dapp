@@ -13,10 +13,11 @@
 from os import environ
 import logging
 import requests
-from web3 import Web3
-
 import json
+
+from web3 import Web3
 from eth_account import Account
+from eth_abi_ext import decode_packed
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -51,36 +52,25 @@ def decode_payload(data):
     payload = data["payload"]
 
     if Web3.to_checksum_address(msg_sender) == EtherPortal:
-        sender = payload[2:42]
-        value = int(payload[42:106], 16)
-        global ether_balance
-        ether_balance += value
-        execLayerData = bytes.fromhex(payload[106:]).decode()
-        print('Transaction details: ' + sender, value, execLayerData)
+        binary = bytes.fromhex(payload[2:])
+        decoded = decode_packed(['address','uint256'],binary)
+        print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == ERC20Portal:
-        success = payload[2:4]
-        token = payload[4:44]
-        sender = payload[44:84]
-        amount = int(payload[84:148], 16)
-        execLayerData = bytes.fromhex(payload[148:]).decode()
+        binary = bytes.fromhex(payload[2:])
+        decoded = decode_packed(['bool','address','address','uint256'],binary)
         global erc20_balance
         erc20_balance += amount
-        print('Transaction details: ' + sender, amount, execLayerData)
+        print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == ERC721Portal:
-        token = payload[2:42]
-        sender = payload[42:82]
-        tokenId = payload[82:146]
-        data = payload[146:]
-        print('Transaction details: ' + sender, tokenId, data)
+        binary = bytes.fromhex(payload[2:])
+        decoded = decode_packed(['address','address','uint256'],binary)
+        print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == ERC1155SinglePortal:
-        token = payload[2:42]
-        sender = payload[42:82]
-        tokenId = payload[82:146]
-        erc1155value = payload[146:210]
-        data = payload[210:]
+        binary = bytes.fromhex(payload[2:])
+        decoded = decode_packed(['address', 'address', 'uint25', 'uint256'],binary)
         global erc1155_balance 
         erc1155_balance += erc115value
-        print('Transaction details: ' + sender, value, data)
+        print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == HardhatWalletAddress:
         dapp_msg = bytes.fromhex(payload[2:]).decode()
 
@@ -128,3 +118,4 @@ while True:
         
         handler = handlers[rollup_request["request_type"]]
         finish["status"] = handler(rollup_request["data"])
+
