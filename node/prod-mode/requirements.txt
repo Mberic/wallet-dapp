@@ -1,0 +1,4 @@
+requests == 2.23.0
+py_expression_eval == 0.3.14
+web3
+eth_account
