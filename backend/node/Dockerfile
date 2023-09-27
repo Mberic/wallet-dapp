@@ -1,6 +1,8 @@
 # syntax=docker.io/docker/dockerfile:1.4
 FROM --platform=linux/riscv64 cartesi/python:3.10-slim-jammy as build-stage
 
+WORKDIR /opt/cartesi/dapp
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential=12.9ubuntu3 \
     && apt install -y --no-install-recommends curl \
@@ -15,14 +17,9 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY ./requirements.txt .
-RUN pip install -r requirements.txt --no-cache \
+RUN pip install -r requirements.txt \
     && find /usr/local/lib -type d -name __pycache__ -exec rm -r {} +
 
-# runtime stage: produces final image that will be executed
-FROM --platform=linux/riscv64 cartesi/python:3.10-slim-jammy
-
-COPY --from=build-stage /opt/venv /opt/venv
-
-WORKDIR /opt/cartesi/dapp
 COPY ./entrypoint.sh .
-COPY ../backend.py .
+COPY ./eth_abi_ext.py .
+COPY ./backend.py .
