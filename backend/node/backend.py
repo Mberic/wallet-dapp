@@ -77,14 +77,8 @@ def decode_payload(data):
         if dapp_msg == 'token_balances':
             balance_check()
         else:
-            signedData = dapp_msg
-            raw_transaction = signedData[43:215] # extract raw transaction from signed data
-            acct = Account.recover_transaction(raw_transaction)
-            if HardhatWalletAddress ==  acct:
-                print("\nSignature succefully verified")
-                print("Transcation signed by " + acct + "\n")
-            else:
-                print("\nInvalid signature.\n")
+            print("Unknown DApp message")
+            print("Message : " + dapp_msg)
 
 def balance_check():
         print("\nEther Balance: " + str(ether_balance))
@@ -118,4 +112,3 @@ while True:
         
         handler = handlers[rollup_request["request_type"]]
         finish["status"] = handler(rollup_request["data"])
-
