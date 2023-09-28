@@ -78,7 +78,7 @@ def decode_payload(data):
             balance_check()
         else:
             print("Unknown DApp message")
-            print("Message : " + dapp_msg)
+            print("Message : " + str(dapp_msg))
 
 def balance_check():
         print("\nEther Balance: " + str(ether_balance))
