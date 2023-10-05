@@ -33,7 +33,6 @@ ERC1155SinglePortal= Web3.to_checksum_address('0x7CFB0193Ca87eB6e48056885E026552
 
 ether_balance = 0
 erc20_balance = 0
-erc1155_balance = 0
 
 def handle_advance(data):
     logger.info(f"Received advance request data")
@@ -50,16 +49,18 @@ def decode_payload(data):
     metadata = data["metadata"]
     msg_sender = metadata["msg_sender"]
     payload = data["payload"]
-
+    
     if Web3.to_checksum_address(msg_sender) == EtherPortal:
         binary = bytes.fromhex(payload[2:])
         decoded = decode_packed(['address','uint256'],binary)
+        global ether_balance 
+        ether_balance += decoded[1]
         print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == ERC20Portal:
         binary = bytes.fromhex(payload[2:])
         decoded = decode_packed(['bool','address','address','uint256'],binary)
         global erc20_balance
-        erc20_balance += amount
+        erc20_balance += decoded[3]
         print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == ERC721Portal:
         binary = bytes.fromhex(payload[2:])
@@ -67,9 +68,7 @@ def decode_payload(data):
         print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == ERC1155SinglePortal:
         binary = bytes.fromhex(payload[2:])
-        decoded = decode_packed(['address', 'address', 'uint25', 'uint256'],binary)
-        global erc1155_balance 
-        erc1155_balance += erc115value
+        decoded = decode_packed(['address', 'address', 'uint256', 'uint256'],binary)
         print('Transaction info: ' + str(decoded))
     elif Web3.to_checksum_address(msg_sender) == HardhatWalletAddress:
         dapp_msg = bytes.fromhex(payload[2:]).decode()
@@ -83,7 +82,6 @@ def decode_payload(data):
 def balance_check():
         print("\nEther Balance: " + str(ether_balance))
         print("ERC20 Balance: " + str(erc20_balance))
-        print("ERC1155 Balance: " + str(erc1155_balance) + "\n")
     
 def handle_inspect(data):
     logger.info(f"Received inspect request data {data}")
